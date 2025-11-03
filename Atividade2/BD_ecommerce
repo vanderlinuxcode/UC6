@@ -1,0 +1,81 @@
+
+/* 1. Criando Arquivo "ecommerce" */
+	create database ecommerce;
+/* 2. Acessar */
+	use ecommerce;
+	-- Tabela Cliente
+	create table clientes(
+		id int auto_increment primary key,
+		nome varchar(100) not null,
+		email varchar(100) not null,
+		senha varchar(100) unique not null,
+		telefone varchar(20),
+		criado_em datetime default current_timestamp
+	);
+
+	-- Tabela Enderecos
+	create table enderecos (
+	id int auto_increment primary key,
+	cliente_id int,
+	rua varchar(100),
+	numero varchar(10),
+	complemento varchar(100),
+	bairro varchar(50),
+	cidade varchar(50),
+	estado char(2)
+	);
+
+	-- Tabela Produtos
+	create table produtos (
+		id int auto_increment primary key,
+		cliente_id int,
+		data_pedido datetime default current_timestamp,
+		status varchar(50) default 'Pendent',
+		total decimal(10,2)
+	);
+
+
+	-- Tabela itens pedido
+	create table itens_pedido (
+		id int auto_increment primary key,
+		pedido_id int,
+		produto_id int,
+		quantidade int not null,
+		preco_unitario decimal(10,2) not null
+	);
+
+/* 3. Tabelas do Banco
+	Clientes
+	Produtos
+	Categorias
+	Itens Pedido
+	Enderecos
+	Usuarios
+*/
+/* 4. Exibindo as tabelas do banco */
+	show tables;
+/* 5. Exibindo Estrutura da Tabela */
+	describe clientes;
+
+/*6. Modificando e melhorando o banco */
+-- 6.1 Renomeando colunas
+alter table clientes
+change column telefone celular varchar(15);
+-- 6.2 Renomeando tabela
+rename table clientes to usuarios;
+-- alterando tipo de dados de uma coluna
+alter table usuarios
+add column telefone varchar(12) after email;
+alter table enderecos add column cep varchar(10) after estado;
+create table pedidos(
+	id int auto_increment primary key,
+	pedido_id int,
+	data_pedido datetime default current_timestamp,
+	situacao varchar(50) default 'Pendente',
+	total decimal(10,2)
+);
+
+
+-- Adicionando index para acessar informações exploradas com frequencia
+alter table usuarios
+add index idx_email (email);
