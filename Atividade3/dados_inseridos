@@ -58,37 +58,38 @@ INSERT INTO produtos (id, cliente_id, data_pedido, status, total) VALUES
 
 -- tabela 3
 
-INSERT INTO pedidos (id, cliente_id, data_pedido, status, total) VALUES
-(1, 1, NOW(), 'Pago', 450.00),
-(2, 2, NOW(), 'Enviado', 320.50),
-(3, 3, NOW(), 'Cancelado', 780.90),
-(4, 4, NOW(), 'Pendente', 150.00),
-(5, 5, NOW(), 'Pago', 999.99),
-(6, 6, NOW(), 'Enviado', 210.75),
-(7, 7, NOW(), 'Pago', 670.30),
-(8, 8, NOW(), 'Cancelado', 430.25),
-(9, 9, NOW(), 'Enviado', 999.99),
-(10, 10, NOW(), 'Pago', 1345.80),
-(11, 11, NOW(), 'Pendente', 777.77),
-(12, 12, NOW(), 'Pago', 560.00),
-(13, 13, NOW(), 'Enviado', 890.00),
-(14, 14, NOW(), 'Cancelado', 310.75),
-(15, 15, NOW(), 'Pago', 980.20),
-(16, 16, NOW(), 'Enviado', 150.00),
-(17, 17, NOW(), 'Pendente', 720.10),
-(18, 18, NOW(), 'Pago', 845.00),
-(19, 19, NOW(), 'Enviado', 399.99),
-(20, 20, NOW(), 'Pago', 1230.50),
-(21, 21, NOW(), 'Cancelado', 1120.00),
-(22, 22, NOW(), 'Enviado', 234.90),
-(23, 23, NOW(), 'Pago', 789.45),
-(24, 24, NOW(), 'Pendente', 1120.00),
-(25, 25, NOW(), 'Cancelado', 310.75),
-(26, 26, NOW(), 'Pago', 980.20),
-(27, 27, NOW(), 'Enviado', 150.00),
-(28, 28, NOW(), 'Pago', 720.10),
-(29, 29, NOW(), 'Cancelado', 845.00),
-(30, 30, NOW(), 'Enviado', 399.99);
+INSERT INTO pedidos (cliente_id, data_pedido, situacao, total) VALUES
+(1, NOW(), 'Pago', 450.00),
+(2, NOW(), 'Enviado', 320.50),
+(3, NOW(), 'Cancelado', 780.90),
+(4, NOW(), 'Pendente', 150.00),
+(5, NOW(), 'Pago', 999.99),
+(6, NOW(), 'Enviado', 210.75),
+(7, NOW(), 'Pago', 670.30),
+(8, NOW(), 'Cancelado', 430.25),
+(9, NOW(), 'Enviado', 999.99),
+(10, NOW(), 'Pago', 1345.80),
+(11, NOW(), 'Pendente', 777.77),
+(12, NOW(), 'Pago', 560.00),
+(13, NOW(), 'Enviado', 890.00),
+(14, NOW(), 'Cancelado', 310.75),
+(15, NOW(), 'Pago', 980.20),
+(16, NOW(), 'Enviado', 150.00),
+(17, NOW(), 'Pendente', 720.10),
+(18, NOW(), 'Pago', 845.00),
+(19, NOW(), 'Enviado', 399.99),
+(20, NOW(), 'Pago', 1230.50),
+(21, NOW(), 'Cancelado', 1120.00),
+(22, NOW(), 'Enviado', 234.90),
+(23, NOW(), 'Pago', 789.45),
+(24, NOW(), 'Pendente', 1120.00),
+(25, NOW(), 'Cancelado', 310.75),
+(26, NOW(), 'Pago', 980.20),
+(27, NOW(), 'Enviado', 150.00),
+(28, NOW(), 'Pago', 720.10),
+(29, NOW(), 'Cancelado', 845.00),
+(30, NOW(), 'Enviado', 399.99);
+
 
 -- tabela 4
 
@@ -193,6 +194,3 @@ INSERT INTO categorias (id, nome, descricao) VALUES
 (30, 'Segurança', 'Sistemas, serviços e produtos voltados à proteção pessoal e patrimonial.');
 
 -- fim
-
-
-
