@@ -1,4 +1,4 @@
-drop database ecommerce;
+DROP DATABASE IF EXISTS ecommerce;
 /* 1. Criando Arquivo "ecommerce" */
 	create database ecommerce;
 /* 2. Acessar */
