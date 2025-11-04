@@ -1,26 +1,36 @@
 -- tabela 1
 
 INSERT INTO usuarios (id, nome, email, telefone, senha, celular, criado_em) VALUES
+(1, 'Carlos Silva', 'carlos.silva@example.com', '11999998888', 'Carlos@2023!', '+5511999998888', NOW()),
 (2, 'Luna Martins', 'luna.martins@example.com', '11987654321', 'Luna@2023!', '+5511987654321', NOW()),
-(3, 'João Pedro Silva', 'joao.silva@example.com', '21999887766', 'Joao#Secure1', '+5521999887766', NOW()),
-(4, 'Camila Rocha', 'camila.rocha@example.com', '31988776655', 'Camila$Pass2', '+5531988776655', NOW()),
-(5, 'Felipe Costa', 'felipe.costa@example.com', '11912345678', 'Felipe@321', '+5511912345678', NOW()),
-(6, 'Beatriz Lima', 'beatriz.lima@example.com', '21911223344', 'Bea!Secure3', '+5521911223344', NOW()),
-(7, 'Rafael Mendes', 'rafael.mendes@example.com', '31999887766', 'Rafa#Pass4', '+5531999887766', NOW()),
-(8, 'Isabela Torres', 'isabela.torres@example.com', '11933445566', 'Isa$2024', '+5511933445566', NOW()),
-(9, 'Lucas Almeida', 'lucas.almeida@example.com', '21955667788', 'Lucas@Safe5', '+5521955667788', NOW()),
-(10, 'Mariana Souza', 'mariana.souza@example.com', '31966778899', 'Mari#Secure6', '+5531966778899', NOW()),
-(11, 'Gustavo Ribeiro', 'gustavo.ribeiro@example.com', '11944556677', 'Gus$Pass7', '+5511944556677', NOW()),
-(12, 'Fernanda Carvalho', 'fernanda.carvalho@example.com', '21977889900', 'Fer@Secure8', '+5521977889900', NOW()),
-(13, 'Thiago Martins', 'thiago.martins@example.com', '31988990011', 'Thiago#2025', '+5531988990011', NOW()),
-(14, 'Juliana Barros', 'juliana.barros@example.com', '11955667788', 'Juli$Safe9', '+5511955667788', NOW()),
-(15, 'Eduardo Nunes', 'eduardo.nunes@example.com', '21966778899', 'Edu@Pass10', '+5521966778899', NOW()),
-(16, 'Patrícia Freitas', 'patricia.freitas@example.com', '31977889900', 'Pat#Secure11', '+5531977889900', NOW()),
-(17, 'Rodrigo Teixeira', 'rodrigo.teixeira@example.com', '11966778899', 'Rod$2025!', '+5511966778899', NOW()),
-(18, 'Aline Castro', 'aline.castro@example.com', '21988990011', 'Ali@Safe12', '+5521988990011', NOW()),
-(19, 'Bruno Oliveira', 'bruno.oliveira@example.com', '31999001122', 'Bru#Pass13', '+5531999001122', NOW()),
-(20, 'Carla Fernandes', 'carla.fernandes@example.com', '11977889900', 'Carla$Secure14', '+5511977889900', NOW()),
-(21, 'Daniela Gomes', 'daniela.gomes@example.com', '21999001122', 'Dani@2025!', '+5521999001122', NOW());
+(3, 'Mariana Costa', 'mariana.costa@example.com', '21988887777', 'Mari@2023!', '+5521988887777', NOW()),
+(4, 'João Pedro', 'joao.pedro@example.com', '31977776666', 'Joao@2023!', '+5531977776666', NOW()),
+(5, 'Fernanda Lima', 'fernanda.lima@example.com', '41966665555', 'Fer@2023!', '+5541966665555', NOW()),
+(6, 'Lucas Rocha', 'lucas.rocha@example.com', '51955554444', 'Lucas@2023!', '+5551955554444', NOW()),
+(7, 'Ana Beatriz', 'ana.beatriz@example.com', '61944443333', 'AnaB@2023!', '+5561944443333', NOW()),
+(8, 'Rafael Torres', 'rafael.torres@example.com', '71933332222', 'Rafa@2023!', '+5571933332222', NOW()),
+(9, 'Juliana Mendes', 'juliana.mendes@example.com', '81922221111', 'Juli@2023!', '+5581922221111', NOW()),
+(10, 'Bruno Oliveira', 'bruno.oliveira@example.com', '11911110000', 'Bruno@2023!', '+5511911110000', NOW()),
+(11, 'Camila Souza', 'camila.souza@example.com', '21900009999', 'Cami@2023!', '+5521900009999', NOW()),
+(12, 'Thiago Ribeiro', 'thiago.ribeiro@example.com', '31988889999', 'Thiago@2023!', '+5531988889999', NOW()),
+(13, 'Patrícia Gomes', 'patricia.gomes@example.com', '41977778888', 'Paty@2023!', '+5541977778888', NOW()),
+(14, 'Eduardo Lima', 'eduardo.lima@example.com', '51966667777', 'Dudu@2023!', '+5551966667777', NOW()),
+(15, 'Larissa Fernandes', 'larissa.fernandes@example.com', '61955556666', 'Lari@2023!', '+5561955556666', NOW()),
+(16, 'Felipe Alves', 'felipe.alves@example.com', '71944445555', 'Fefe@2023!', '+5571944445555', NOW()),
+(17, 'Isabela Duarte', 'isabela.duarte@example.com', '81933334444', 'Isa@2023!', '+5581933334444', NOW()),
+(18, 'Gustavo Nunes', 'gustavo.nunes@example.com', '11922223333', 'Gus@2023!', '+5511922223333', NOW()),
+(19, 'Natália Barros', 'natalia.barros@example.com', '21911112222', 'Naty@2023!', '+5521911112222', NOW()),
+(20, 'André Carvalho', 'andre.carvalho@example.com', '31900001111', 'Andre@2023!', '+5531900001111', NOW()),
+(21, 'Vanessa Teixeira', 'vanessa.teixeira@example.com', '41999990000', 'Vane@2023!', '+5541999990000', NOW()),
+(22, 'Rodrigo Pinto', 'rodrigo.pinto@example.com', '51988880000', 'Rodi@2023!', '+5551988880000', NOW()),
+(23, 'Aline Castro', 'aline.castro@example.com', '61977770000', 'Aline@2023!', '+5561977770000', NOW()),
+(24, 'Diego Freitas', 'diego.freitas@example.com', '71966660000', 'Diego@2023!', '+5571966660000', NOW()),
+(25, 'Tatiane Lopes', 'tatiane.lopes@example.com', '81955550000', 'Tati@2023!', '+5581955550000', NOW()),
+(26, 'Henrique Melo', 'henrique.melo@example.com', '11944440000', 'Henri@2023!', '+5511944440000', NOW()),
+(27, 'Débora Reis', 'debora.reis@example.com', '21933330000', 'Deb@2023!', '+5521933330000', NOW()),
+(28, 'Marcelo Cunha', 'marcelo.cunha@example.com', '31922220000', 'Marcelo@2023!', '+5531922220000', NOW()),
+(29, 'Bianca Farias', 'bianca.farias@example.com', '41911110000', 'Bia@2023!', '+5541911110000', NOW()),
+(30, 'Leandro Vieira', 'leandro.vieira@example.com', '51900009999', 'Leo@2023!', '+5551900009999', NOW());
 
 -- tabela 2
 
@@ -89,7 +99,6 @@ INSERT INTO pedidos (cliente_id, data_pedido, situacao, total) VALUES
 (28, NOW(), 'Pago', 720.10),
 (29, NOW(), 'Cancelado', 845.00),
 (30, NOW(), 'Enviado', 399.99);
-
 
 -- tabela 4
 
