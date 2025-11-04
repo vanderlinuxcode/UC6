@@ -76,7 +76,7 @@ add column telefone varchar(12) after email;
 alter table enderecos add column cep varchar(10) after estado;
 create table pedidos(
 	id int auto_increment primary key,
-	pedido_id int,
+	cliente_id int,
 	data_pedido datetime default current_timestamp,
 	situacao varchar(50) default 'Pendente',
 	total decimal(10,2)
