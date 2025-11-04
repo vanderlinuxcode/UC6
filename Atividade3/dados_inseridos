@@ -1,3 +1,5 @@
+-- tabela 1
+
 INSERT INTO usuarios (id, nome, email, telefone, senha, celular, criado_em) VALUES
 (2, 'Luna Martins', 'luna.martins@example.com', '11987654321', 'Luna@2023!', '+5511987654321', NOW()),
 (3, 'João Pedro Silva', 'joao.silva@example.com', '21999887766', 'Joao#Secure1', '+5521999887766', NOW()),
@@ -20,6 +22,7 @@ INSERT INTO usuarios (id, nome, email, telefone, senha, celular, criado_em) VALU
 (20, 'Carla Fernandes', 'carla.fernandes@example.com', '11977889900', 'Carla$Secure14', '+5511977889900', NOW()),
 (21, 'Daniela Gomes', 'daniela.gomes@example.com', '21999001122', 'Dani@2025!', '+5521999001122', NOW());
 
+-- tabela 2
 
 INSERT INTO produtos (id, cliente_id, data_pedido, status, total) VALUES
 (1, 1, NOW(), 'pago', 199.90),
@@ -53,6 +56,8 @@ INSERT INTO produtos (id, cliente_id, data_pedido, status, total) VALUES
 (29, 29, NOW(), 'enviado', 620.00),
 (30, 30, NOW(), 'pago', 999.99);
 
+-- tabela 3
+
 INSERT INTO pedidos (id, cliente_id, data_pedido, status, total) VALUES
 (1, 1, NOW(), 'Pago', 450.00),
 (2, 2, NOW(), 'Enviado', 320.50),
@@ -84,6 +89,8 @@ INSERT INTO pedidos (id, cliente_id, data_pedido, status, total) VALUES
 (28, 28, NOW(), 'Pago', 720.10),
 (29, 29, NOW(), 'Cancelado', 845.00),
 (30, 30, NOW(), 'Enviado', 399.99);
+
+-- tabela 4
 
 INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade, preco_unitario) VALUES
 (1, 1, 5, 2, 628.13),
@@ -117,6 +124,8 @@ INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade, preco_unitario)
 (29, 24, 30, 1, 65.21),
 (30, 25, 29, 1, 465.19);
 
+-- tabela 5
+
 INSERT INTO enderecos (id, cliente_id, rua, numero, bairro, cidade, estado, cep) VALUES
 (1, 1, 'Colonia Rodrigo Mendes', '6774', 'Embaubas', 'Ferreira', 'SC', '18944-467'),
 (2, 2, 'Campo Costa', '8986', 'Jardim Alvorada', 'da Conceição', 'PI', '23171310'),
@@ -149,8 +158,41 @@ INSERT INTO enderecos (id, cliente_id, rua, numero, bairro, cidade, estado, cep)
 (29, 29, 'Estacao da Costa', '9950', 'Vila Paraíso', 'Sa', 'BA', '83837225'),
 (30, 30, 'Morro Ayla Sales', '1627', 'Cidade Jardim', 'Cassiano Paulista', 'RO', '90962671');
 
+-- tabela 6
 
+INSERT INTO categorias (id, nome, descricao) VALUES
+(1, 'Tecnologia', 'Produtos e serviços relacionados à inovação tecnológica.'),
+(2, 'Educação', 'Cursos, materiais e instituições de ensino.'),
+(3, 'Saúde', 'Itens e serviços voltados ao bem-estar físico e mental.'),
+(4, 'Alimentação', 'Restaurantes, mercados e produtos alimentícios.'),
+(5, 'Moda', 'Roupas, acessórios e tendências do vestuário.'),
+(6, 'Esportes', 'Equipamentos, eventos e práticas esportivas.'),
+(7, 'Entretenimento', 'Filmes, séries, jogos e atividades recreativas.'),
+(8, 'Finanças', 'Serviços bancários, investimentos e planejamento financeiro.'),
+(9, 'Imóveis', 'Compra, venda e aluguel de propriedades.'),
+(10, 'Automóveis', 'Veículos, peças e serviços automotivos.'),
+(11, 'Beleza', 'Cosméticos, cuidados pessoais e estética.'),
+(12, 'Turismo', 'Viagens, hospedagens e passeios turísticos.'),
+(13, 'Pets', 'Produtos e serviços para animais de estimação.'),
+(14, 'Música', 'Instrumentos, gêneros musicais e artistas.'),
+(15, 'Literatura', 'Livros, autores e gêneros literários.'),
+(16, 'Arte', 'Pintura, escultura, exposições e artistas visuais.'),
+(17, 'Fotografia', 'Equipamentos, técnicas e serviços fotográficos.'),
+(18, 'Eventos', 'Organização e divulgação de eventos sociais e corporativos.'),
+(19, 'Marketing', 'Estratégias, campanhas e ferramentas de divulgação.'),
+(20, 'Recursos Humanos', 'Gestão de pessoas, recrutamento e treinamento.'),
+(21, 'Software', 'Aplicativos, sistemas operacionais e ferramentas digitais.'),
+(22, 'Hardware', 'Componentes físicos de computadores e dispositivos.'),
+(23, 'Sustentabilidade', 'Práticas e produtos ecológicos e sustentáveis.'),
+(24, 'Direito', 'Serviços jurídicos, legislação e advocacia.'),
+(25, 'Psicologia', 'Terapias, estudos e profissionais da área.'),
+(26, 'Engenharia', 'Projetos, construção e inovação técnica.'),
+(27, 'Arquitetura', 'Design de espaços, urbanismo e construção civil.'),
+(28, 'Agricultura', 'Cultivo, técnicas e produtos agrícolas.'),
+(29, 'Logística', 'Transporte, armazenamento e distribuição de mercadorias.'),
+(30, 'Segurança', 'Sistemas, serviços e produtos voltados à proteção pessoal e patrimonial.');
 
+-- fim
 
 
 
