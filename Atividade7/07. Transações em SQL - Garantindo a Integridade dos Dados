@@ -1,0 +1,75 @@
+Cenário 1: Realizando uma Compra Segura
+-- Simulação: Cliente 1 compra 2 unidades do produto 10
+START TRANSACTION;
+
+-- 1. Verificar se há estoque suficiente
+SELECT estoque FROM produtos WHERE id = 10 FOR UPDATE;
+
+-- 2. Atualizar estoque
+UPDATE produtos
+SET estoque = estoque - 2
+WHERE id = 10 AND estoque >= 2;
+
+-- 3. Criar pedido
+INSERT INTO pedidos (id, cliente_id, data_pedido, status, total)
+VALUES (100, 1, NOW(), 'Confirmado', 199.98);
+
+-- 4. Inserir item no pedido
+INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade, preco_unitario)
+VALUES (100, 100, 10, 2, 99.99);
+
+-- 5. Confirmar transação
+COMMIT;
+
+-- Se qualquer etapa falhar (ex: estoque insuficiente), use ROLLBACK; para desfazer tudo.
+
+
+-- ================================================================================================
+Cenário 2: Cancelamento de Pedido com Reversão
+-- Simulação: Cancelar pedido 100 e devolver estoque do produto 10
+START TRANSACTION;
+
+-- 1. Atualizar status do pedido
+UPDATE pedidos
+SET status = 'Cancelado'
+WHERE id = 100;
+
+-- 2. Recuperar quantidade do item
+SELECT quantidade FROM itens_pedido WHERE pedido_id = 100 AND produto_id = 10 FOR UPDATE;
+
+-- 3. Repor estoque
+UPDATE produtos
+SET estoque = estoque + (
+    SELECT quantidade FROM itens_pedido WHERE pedido_id = 100 AND produto_id = 10
+)
+WHERE id = 10;
+
+-- 4. Confirmar transação
+COMMIT;
+
+-- O uso de FOR UPDATE garante que os registros lidos estejam bloqueados até o COMMIT.
+
+-- ================================================================================================
+Cenário 3: Promoção com Reversão 
+-- Simulação: Aplicar 10% de desconto em produtos da categoria 5
+START TRANSACTION;
+
+-- 1. Verificar preços antes da alteração (opcional)
+SELECT id, nome, preco FROM produtos WHERE categoria_id = 5;
+
+-- 2. Atualizar preços com desconto
+UPDATE produtos
+SET preco = preco * 0.9
+WHERE categoria_id = 5;
+
+-- 3. Verificar novos preços (opcional)
+SELECT id, nome, preco FROM produtos WHERE categoria_id = 5;
+
+-- 4. Decisão: se tudo estiver certo, COMMIT; senão, ROLLBACK;
+-- COMMIT;
+-- ou
+-- ROLLBACK;
+
+-- Ideal para testes de campanhas promocionais com segurança de reversão.
+
+
