@@ -1,0 +1,338 @@
+Cenário 1: Listando Produtos por Categoria
+
+-- Define um novo delimitador temporário para o bloco da procedure
+DELIMITER //
+
+-- Cria a procedure 'ListaProdutosPorCategoria' com um parâmetro de entrada
+CREATE PROCEDURE ListaProdutosPorCategoria (
+    IN categoria_listados INT
+)
+BEGIN
+    -- Seleciona os detalhes do produto e o nome da categoria
+    SELECT
+        p.nome AS Produto,
+        p.preco AS Preco,
+        p.estoque AS Estoque,
+        c.nome AS Categoria
+    FROM
+        produtos p
+    INNER JOIN
+        categorias c ON p.categoria_id = c.id
+    WHERE
+        p.categoria_id = categoria_listados
+    ORDER BY
+        p.nome;
+END //
+
+-- Restaura o delimitador padrão (;)
+DELIMITER ;
+
+CALL ListaProdutosPorCategoria(18);
++--------------+---------+---------+-----------+
+| Produto      | Preco   | Estoque | Categoria |
++--------------+---------+---------+-----------+
+| Smartphone X | 1500.00 |      47 | Celulares |
++--------------+---------+---------+-----------+
+1 row in set (0,00 sec)
+
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CALL ListaProdutosPorCategoria(19);
++--------------------------+---------+---------+-----------+
+| Produto                  | Preco   | Estoque | Categoria |
++--------------------------+---------+---------+-----------+
+| Monitor LED 27 polegadas | 1200.00 |      25 | TVs       |
++--------------------------+---------+---------+-----------+
+1 row in set (0,00 sec)
+
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CALL ListaProdutosPorCategoria(29);
++-------------------+--------+---------+-------------+
+| Produto           | Preco  | Estoque | Categoria   |
++-------------------+--------+---------+-------------+
+| Whey Protein 900g | 110.00 |      45 | Suplementos |
++-------------------+--------+---------+-------------+
+1 row in set (0,00 sec)
+
+Query OK, 0 rows affected (0,00 sec)
+
+-------------------------------------------------------
+
+Cenário 2: Processando um Novo Pedido (Com Transação)
+
+-- Define um novo delimitador temporário para o bloco da procedure
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> DELIMITER //
+mysql> 
+mysql> -- Cria a procedure 'ProcessarNovoPedido_Transacao'
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CREATE PROCEDURE ProcessarNovoPedido_Transacao (
+    ->     IN p_cliente_id INT,
+    ->     IN p_produto_id INT,
+    ->     IN p_quantidade INT
+    -> )
+    -> BEGIN
+    ->     -- 1. DECLARAR VARIÁVEIS
+    ->     DECLARE v_preco_unitario DECIMAL(10, 2);
+    ->     DECLARE v_total_pedido DECIMAL(10, 2);
+    ->     DECLARE v_novo_pedido_id INT;
+    ->     DECLARE v_estoque_atual INT;
+    -> 
+    ->     -- 2. INICIAR A TRANSAÇÃO
+    ->     START TRANSACTION;
+    -> 
+    ->     -- Tentar obter o preço do produto e o estoque atual.
+    ->     -- Se o produto não existir, a transação será desfeita implicitamente ou falhará na próxima etapa.
+    ->     SELECT
+    ->         preco, estoque
+    ->     INTO
+    ->         v_preco_unitario, v_estoque_atual
+    ->     FROM
+    ->         produtos
+    ->     WHERE
+    ->         id = p_produto_id
+    ->     FOR UPDATE; -- Bloqueia a linha para garantir que outro processo não altere o estoque simultaneamente
+    -> 
+    ->     -- Verificar se o produto existe e se há estoque suficiente 
+    ->     IF v_preco_unitario IS NULL THEN
+    ->         -- Sinaliza que o produto não foi encontrado
+    ->         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Erro: Produto não encontrado.';
+    ->         ROLLBACK;
+    ->     ELSEIF v_estoque_atual < p_quantidade THEN
+    ->         -- Sinaliza que o estoque é insuficiente
+    ->         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Erro: Estoque insuficiente para a quantidade solicitada.';
+    ->         ROLLBACK;
+    ->     ELSE
+    ->         -- 3. CALCULAR TOTAL
+    ->         SET v_total_pedido = v_preco_unitario * p_quantidade;
+    -> 
+    ->         -- 4. INSERIR O PEDIDO PRINCIPAL
+    ->         -- Obs: Usamos um ID alto, pois a tabela 'pedidos' não tem AUTO_INCREMENT.
+    ->         SELECT IFNULL(MAX(id), 0) + 1 INTO v_novo_pedido_id FROM pedidos;
+    -> 
+    ->         INSERT INTO pedidos (id, cliente_id, data_pedido, status, total)
+    ->         VALUES (v_novo_pedido_id, p_cliente_id, NOW(), 'Pendente', v_total_pedido);
+    -> 
+    ->         -- 5. INSERIR O ITEM DO PEDIDO
+    ->         INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade, preco_unitario)
+    ->         VALUES (v_novo_pedido_id, v_novo_pedido_id, p_produto_id, p_quantidade, v_preco_unitario);
+    -> 
+    ->         -- 6. ATUALIZAR O ESTOQUE
+    ->         UPDATE produtos
+    ->         SET estoque = estoque - p_quantidade
+    ->         WHERE id = p_produto_id;
+    -> 
+    ->         -- 7. CONFIRMAR A TRANSAÇÃO (Sucesso)
+    ->         COMMIT;
+    -> 
+    ->         -- Retorna o ID do pedido criado
+    ->         SELECT CONCAT('Pedido criado com sucesso. ID do Pedido: ', v_novo_pedido_id) AS Mensagem_Sucesso;
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0,03 sec)
+
+mysql> 
+mysql> -- Restaura o delimitador padrão (;)
+Query OK, 0 rows affected (0,01 sec)
+
+mysql> DELIMITER ;
+mysql> -- 1. Verificar o estoque ANTES
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> SELECT estoque FROM produtos WHERE id = 10; -- Deve retornar 300
++---------+
+| estoque |
++---------+
+|     300 |
++---------+
+1 row in set (0,00 sec)
+
+mysql> -- 2. Executar a transação
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CALL ProcessarNovoPedido_Transacao(10, 10, 5);
++---------------------------------------------+
+| Mensagem_Sucesso                            |
++---------------------------------------------+
+| Pedido criado com sucesso. ID do Pedido: 32 |
++---------------------------------------------+
+1 row in set (0,03 sec)
+
+Query OK, 0 rows affected (0,03 sec)
+
+mysql> -- 3. Verificar o estoque DEPOIS
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> SELECT estoque FROM produtos WHERE id = 10; -- Deve retornar 295
++---------+
+| estoque |
++---------+
+|     295 |
++---------+
+1 row in set (0,00 sec)
+
+a RPG de mesa               |  120.00 |      35 |           30 |
+| 30 | Aspirador de Pó Robô                 | Aspirador de pó automático com mapeamento a laser   |  950.00 |      18 |           21 |
++----+--------------------------------------+-----------------------------------------------------+---------+---------+--------------+
+30 rows in set (0,00 sec)
+
+mysql> CALL ProcessarNovoPedido_Transacao(10, 27, 2);
++---------------------------------------------+
+| Mensagem_Sucesso                            |
++---------------------------------------------+
+| Pedido criado com sucesso. ID do Pedido: 33 |
++---------------------------------------------+
+1 row in set (0,01 sec)
+
+Query OK, 0 rows affected (0,01 sec)
+
+mysql> SELECT estoque FROM produtos WHERE id = 27; -- Deve retornar 18
+
++---------+
+| estoque |
++---------+
+|      18 |
++---------+
+1 row in set (0,01 sec)
+
+##############------####################
+Exemplo de Falha (Estoque Insuficiente)
+
+mysql> -- Tentar comprar 500 unidades (maior que o estoque atual de 295)
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CALL ProcessarNovoPedido_Transacao(10, 10, 500);
+ERROR 1644 (45000): Erro: Estoque insuficiente para a quantidade solicitada.
+
+
+-------------------------------------------------------
+Cenário 3: Atualizando o Preço dos Produtos
+
+-- Define um novo delimitador temporário
+DELIMITER //
+
+-- Cria a procedure 'AtualizarPrecoPorCategoria'
+CREATE PROCEDURE AtualizarPrecoPorCategoria (
+    IN categoria_id_param INT,
+    IN novo_preco DECIMAL(10, 2)
+)
+BEGIN
+    -- Declaração de variável para armazenar o número de linhas afetadas
+    DECLARE v_linhas_afetadas INT;
+    
+    -- Inicia uma transação para garantir a atomicidade (opcional, mas recomendado para UPDATEs)
+    START TRANSACTION;
+
+    -- Atualiza o campo 'preco' na tabela 'produtos'
+    UPDATE produtos
+    SET
+        preco = novo_preco
+    WHERE
+        categoria_id = categoria_id_param;
+
+    -- Armazena o número de linhas que foram realmente alteradas
+    SET v_linhas_afetadas = ROW_COUNT();
+
+    -- Confirma a transação
+    COMMIT;
+
+    -- Retorna uma mensagem de sucesso
+    SELECT CONCAT(
+        v_linhas_afetadas,
+        ' produtos na categoria ID ',
+        categoria_id_param,
+        ' tiveram seus preços atualizados para R$ ',
+        FORMAT(novo_preco, 2)
+    ) AS Resultado_Atualizacao;
+
+END //
+
+-- Restaura o delimitador padrão (;)
+DELIMITER ;
+
+1. Verificar Preços Atuais (Categoria Livros - ID 2)
+
+SELECT nome, preco, categoria_id FROM produtos WHERE categoria_id = 2;
++--------------------------+-------+--------------+
+| nome                     | preco | categoria_id |
++--------------------------+-------+--------------+
+| Livro "O Códex Secreto"  | 35.50 |            2 |
++--------------------------+-------+--------------+
+1 row in set (0,00 sec)
+
+
+2. Executar a Atualização
+
+Preços atualizados conforme categoria_id e valor abaixo:
+
+CALL AtualizarPrecoPorCategoria(2, 49.90);
+
+
+3. Preços verificados após atualização:
+
+SELECT nome, preco, categoria_id FROM produtos WHERE categoria_id = 2;
++--------------------------+-------+--------------+
+| nome                     | preco | categoria_id |
++--------------------------+-------+--------------+
+| Livro "O Códex Secreto"  | 49.90 |            2 |
++--------------------------+-------+--------------+
+1 row in set (0,01 sec)
+
+Esta procedure abaixo é muito útil para análise de vendas e campanhas de marketing direcionadas:
+
+-- Define um novo delimitador temporário
+DELIMITER //
+
+-- Cria a procedure 'ListarClientesPorPeriodo'
+CREATE PROCEDURE ListarClientesPorPeriodo (
+    IN data_inicio DATE,
+    IN data_fim DATE
+)
+BEGIN
+    -- Seleciona os dados do cliente (usuário)
+    SELECT DISTINCT
+        u.id AS ID_Cliente,
+        u.nome AS Nome_Cliente,
+        u.email AS Email,
+        u.celular AS Celular
+    FROM
+        usuarios u
+    INNER JOIN
+        pedidos p ON u.id = p.cliente_id
+    WHERE
+        -- Filtra pedidos dentro do intervalo de datas
+        p.data_pedido >= data_inicio AND p.data_pedido <= data_fim
+    ORDER BY
+        u.nome;
+END //
+
+-- Restaura o delimitador padrão (;)
+DELIMITER ;
+
+Exemplo de Uso (Execução)
+Para executar a procedure, usaremos o comando CALL, passando as datas de início e fim. O formato de data deve ser 'YYYY-MM-DD'.
+
+Observação: Como todos os dados de pedido no seu INSERT foram criados usando NOW(), eles têm a mesma data (a data da execução do INSERT). Para o exemplo funcionar, usaremos a data de hoje (considerando que o INSERT foi executado hoje).
+
+1. Chamando a Procedure para o Período ('2025-11-11', '2025-11-23');
+
+CALL ListarClientesPorPeriodo('2025-11-11', '2025-11-23');
++------------+-----------------+----------------------------+-----------------+
+| ID_Cliente | Nome_Cliente    | Email                      | Celular         |
++------------+-----------------+----------------------------+-----------------+
+|          1 | Ana Clara Silva | anaclara.silva@example.com | (11) 98765-4321 |
+|         10 | Rafael Gomes    | rafael.gomes@example.com   | (84) 91111-2222 |
++------------+-----------------+----------------------------+-----------------+
+2 rows in set (0,00 sec)
+
+Query OK, 0 rows affected (0,00 sec)
+
+2. Aqui retorna um período vazio data futura como exemplo.
+
+mysql> CALL ListarClientesPorPeriodo('2026-01-01', '2026-01-31'); -- listando para um período sem pedidos até pq não chegou este ano e dia ainda.
+Empty set (0,00 sec)
+
+Query OK, 0 rows affected (0,00 sec)
