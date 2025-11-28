@@ -1,0 +1,555 @@
+-- 1. CONFIGURAÇÃO, CRIAÇÃO E SELEÇÃO DO BANCO DE DADOS
+--------------------------------------------------------------------------------
+DROP DATABASE IF EXISTS logistica_db; -- Garante que o banco de dados seja criado do zero
+CREATE DATABASE logistica_db;
+USE logistica_db;
+
+-- 2. CRIAÇÃO DAS TABELAS COM CHAVES PRIMÁRIAS (PK), ESTRANGEIRAS (FK) E ÍNDICES
+
+-- Tabela 1: Funcionários Administrativos (PK e Índices de Desempenho)
+CREATE TABLE Funcionarios_Administrativos (
+    matricula VARCHAR(10) PRIMARY KEY, -- PK (Implica índice)
+    nome VARCHAR(100) NOT NULL,
+    setor VARCHAR(50) NOT NULL,
+    contato VARCHAR(20),
+    INDEX idx_nome_funcionario (nome), 
+    INDEX idx_setor (setor)
+);
+
+-- Tabela 2: Clientes (PK e Índices de Desempenho)
+CREATE TABLE Clientes (
+    CNPJ VARCHAR(18) PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    contato VARCHAR(20),
+    status_pagamento ENUM('Em Dia', 'Atrasado', 'Pendente') NOT NULL,
+    INDEX idx_nome_cliente (nome),
+    INDEX idx_status_pagamento (status_pagamento) 
+);
+
+-- Tabela 3: Motoristas (PK e Índices de Desempenho)
+CREATE TABLE Motoristas (
+    CNH VARCHAR(15) PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    situacao ENUM('Ativo', 'Férias', 'Inativo', 'Manutenção') NOT NULL,
+    INDEX idx_nome_motorista (nome),
+    INDEX idx_situacao_motorista (situacao)
+);
+
+-- Tabela 4: Veículos (PK e Índices de Desempenho)
+CREATE TABLE Veiculos (
+    placa VARCHAR(8) PRIMARY KEY,
+    modelo VARCHAR(50) NOT NULL,
+    ano YEAR NOT NULL,
+    capacidade DECIMAL(10, 2) NOT NULL COMMENT 'Em toneladas ou metros cúbicos',
+    status_veiculo ENUM('Disponível', 'Em Rota', 'Manutenção') NOT NULL,
+    INDEX idx_modelo (modelo),
+    INDEX idx_status_veiculo (status_veiculo) 
+);
+
+-- Tabela 5: Rotas (PK e Índices de Desempenho)
+CREATE TABLE Rotas (
+    id_rota INT AUTO_INCREMENT PRIMARY KEY,
+    origem VARCHAR(100) NOT NULL,
+    destino VARCHAR(100) NOT NULL,
+    distancia DECIMAL(10, 2) NOT NULL COMMENT 'Em km',
+    prazo INT NOT NULL COMMENT 'Em dias',
+    INDEX idx_origem (origem),
+    INDEX idx_destino (destino)
+);
+
+-- Tabela 6: Entregas (PK, FKs e Índices de Desempenho, incluindo o relacionamento com Funcionários_Administrativos)
+CREATE TABLE Entregas (
+    id_entrega INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_cnpj VARCHAR(18) NOT NULL,
+    motorista_cnh VARCHAR(15) NOT NULL,
+    veiculo_placa VARCHAR(8) NOT NULL,
+    id_rota INT NOT NULL,
+    matricula_adm_responsavel VARCHAR(10) NOT NULL, -- FK para Funcionários
+    data_saida DATE NOT NULL,
+    previsao_entrega DATE NOT NULL,
+    entrega_real DATE,
+    status_entrega ENUM('Em Trânsito', 'Entregue', 'Pendente', 'Cancelada') NOT NULL,
+    
+    FOREIGN KEY (cliente_cnpj) REFERENCES Clientes(CNPJ),
+    FOREIGN KEY (motorista_cnh) REFERENCES Motoristas(CNH),
+    FOREIGN KEY (veiculo_placa) REFERENCES Veiculos(placa),
+    FOREIGN KEY (id_rota) REFERENCES Rotas(id_rota),
+    FOREIGN KEY (matricula_adm_responsavel) REFERENCES Funcionarios_Administrativos(matricula),
+    
+    INDEX idx_adm_responsavel (matricula_adm_responsavel),
+    INDEX idx_data_saida (data_saida),
+    INDEX idx_previsao_entrega (previsao_entrega),
+    INDEX idx_status_entrega (status_entrega)
+);
+
+-- Tabela 7: Ocorrências (PK, FK e Índices de Desempenho)
+CREATE TABLE Ocorrencias (
+    id_ocorrencia INT AUTO_INCREMENT PRIMARY KEY,
+    id_entrega INT NOT NULL,
+    tipo ENUM('Atraso', 'Dano', 'Extravio', 'Problema Veicular', 'Outro') NOT NULL,
+    descricao TEXT,
+    data_ocorrencia DATETIME NOT NULL,
+    
+    FOREIGN KEY (id_entrega) REFERENCES Entregas(id_entrega),
+    
+    INDEX idx_tipo_ocorrencia (tipo),
+    INDEX idx_data_ocorrencia (data_ocorrencia)
+);
+
+-- Tabela 8: Pagamentos (PK, FKs e Índices de Desempenho)
+CREATE TABLE Pagamentos (
+    id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_cnpj VARCHAR(18) NOT NULL,
+    id_entrega INT NOT NULL,
+    valor DECIMAL(10, 2) NOT NULL,
+    forma ENUM('Boleto', 'Transferência', 'Cartão') NOT NULL,
+    status_pagamento ENUM('Pago', 'Pendente', 'Estornado') NOT NULL,
+    
+    FOREIGN KEY (cliente_cnpj) REFERENCES Clientes(CNPJ),
+    FOREIGN KEY (id_entrega) REFERENCES Entregas(id_entrega),
+    
+    INDEX idx_status_pagamento_det (status_pagamento),
+    INDEX idx_forma_pagamento (forma)
+);
+
+-- Tabela 9: Monitoramento (Boas Práticas: PK, FKs e Índices de Desempenho)
+CREATE TABLE Monitoramento (
+    id_monitoramento INT AUTO_INCREMENT PRIMARY KEY,
+    matricula_adm VARCHAR(10) NOT NULL,
+    id_entrega INT NOT NULL,
+    data_monitoramento DATETIME NOT NULL,
+    descricao_acao VARCHAR(255),
+    
+    FOREIGN KEY (matricula_adm) REFERENCES Funcionarios_Administrativos(matricula),
+    FOREIGN KEY (id_entrega) REFERENCES Entregas(id_entrega),
+    
+    INDEX idx_monitor_adm (matricula_adm),
+    INDEX idx_monitor_entrega (id_entrega),
+    INDEX idx_data_monitoramento (data_monitoramento)
+);
+
+
+-- 3. INSERÇÃO DOS DADOS (60 REGISTROS POR TABELA)
+
+-- Inserção em Funcionários Administrativos (60 registros)
+INSERT INTO Funcionarios_Administrativos (matricula, nome, setor, contato) VALUES
+('ADM001', 'Ana Costa', 'Financeiro', '9876-5432'), ('ADM002', 'Bruno Lima', 'Recursos Humanos', '9123-4567'),
+('ADM003', 'Carla Mendes', 'Logística', '9345-6789'), ('ADM004', 'Daniel Alves', 'TI', '9567-8901'),
+('ADM005', 'Elisa Santos', 'Comercial', '9789-0123'), ('ADM006', 'Fábio Rocha', 'Financeiro', '9012-3456'),
+('ADM007', 'Gisele Doria', 'Logística', '9234-5678'), ('ADM008', 'Hugo Vieira', 'TI', '9456-7890'),
+('ADM009', 'Igor Campos', 'Recursos Humanos', '9678-9012'), ('ADM010', 'Júlia Azevedo', 'Comercial', '9890-1234'),
+('ADM011', 'Léo Nunes', 'Financeiro', '9000-1111'), ('ADM012', 'Maria Oliveira', 'Logística', '9000-2222'),
+('ADM013', 'Nelson Ferreira', 'TI', '9000-3333'), ('ADM014', 'Patrícia Gomes', 'Recursos Humanos', '9000-4444'),
+('ADM015', 'Quésia Ribeiro', 'Comercial', '9000-5555'), ('ADM016', 'Rafael Souza', 'Logística', '9000-6666'),
+('ADM017', 'Sofia Martins', 'Financeiro', '9000-7777'), ('ADM018', 'Thiago Barbosa', 'TI', '9000-8888'),
+('ADM019', 'Ursula Xavier', 'Comercial', '9000-9999'), ('ADM020', 'Vítor Zanon', 'Logística', '9000-0000'),
+('ADM021', 'Beatriz Nogueira', 'Logística', '9001-1111'), ('ADM022', 'Carlos Pereira', 'Financeiro', '9001-2222'),
+('ADM023', 'Diana Quintela', 'Comercial', '9001-3333'), ('ADM024', 'Eduardo Ramos', 'TI', '9001-4444'),
+('ADM025', 'Fernanda Soares', 'Recursos Humanos', '9001-5555'), ('ADM026', 'Gabriel Toledo', 'Logística', '9001-6666'),
+('ADM027', 'Helena Uchoa', 'Financeiro', '9001-7777'), ('ADM028', 'Iago Vianna', 'Comercial', '9001-8888'),
+('ADM029', 'Juliana Werner', 'TI', '9001-9999'), ('ADM030', 'Kleber Yunes', 'Recursos Humanos', '9002-0000'),
+('ADM031', 'Larissa Zanoni', 'Logística', '9002-1111'), ('ADM032', 'Marcos Abreu', 'Financeiro', '9002-2222'),
+('ADM033', 'Natália Barreto', 'Comercial', '9002-3333'), ('ADM034', 'Otávio Coelho', 'TI', '9002-4444'),
+('ADM035', 'Priscila Diniz', 'Recursos Humanos', '9002-5555'), ('ADM036', 'Quirino Elias', 'Logística', '9002-6666'),
+('ADM037', 'Renata Franco', 'Financeiro', '9002-7777'), ('ADM038', 'Sérgio Gusmão', 'Comercial', '9002-8888'),
+('ADM039', 'Tânia Holanda', 'TI', '9002-9999'), ('ADM040', 'Ubiratan Índio', 'Recursos Humanos', '9003-0000'),
+('ADM041', 'Vanda Jardim', 'Logística', '9003-1111'), ('ADM042', 'Wagner Lacerda', 'Financeiro', '9003-2222'),
+('ADM043', 'Xênia Medeiros', 'Comercial', '9003-3333'), ('ADM044', 'Yuri Neves', 'TI', '9003-4444'),
+('ADM045', 'Zélia Pinheiro', 'Recursos Humanos', '9003-5555'), ('ADM046', 'Aldo Queiroz', 'Logística', '9003-6666'),
+('ADM047', 'Bárbara Rosa', 'Financeiro', '9003-7777'), ('ADM048', 'César Sales', 'Comercial', '9003-8888'),
+('ADM049', 'Denise Toledo', 'TI', '9003-9999'), ('ADM050', 'Érico Uzeda', 'Recursos Humanos', '9004-0000'),
+('ADM051', 'Flávia Valente', 'Logística', '9004-1111'), ('ADM052', 'Geraldo Xavier', 'Financeiro', '9004-2222'),
+('ADM053', 'Hilda Zanetti', 'Comercial', '9004-3333'), ('ADM054', 'Ivo Almeida', 'TI', '9004-4444'),
+('ADM055', 'Jéssica Borges', 'Recursos Humanos', '9004-5555'), ('ADM056', 'Kauê Castro', 'Logística', '9004-6666'),
+('ADM057', 'Lígia Duarte', 'Financeiro', '9004-7777'), ('ADM058', 'Mauro Esteves', 'Comercial', '9004-8888'),
+('ADM059', 'Naiara Freitas', 'TI', '9004-9999'), ('ADM060', 'Osmar Gama', 'Recursos Humanos', '9005-0000');
+
+-- Inserção em Clientes (60 registros)
+INSERT INTO Clientes (CNPJ, nome, contato, status_pagamento) VALUES
+('00.000.000/0001-01', 'Tech Solutions Ltda', '11 5555-1001', 'Em Dia'),
+('11.111.111/0001-11', 'Construtora Forte S.A.', '21 5555-1002', 'Atrasado'),
+('22.222.222/0001-22', 'Alimentos Naturais do Sul', '51 5555-1003', 'Em Dia'),
+('33.333.333/0001-33', 'Metalúrgica Delta', '41 5555-1004', 'Pendente'),
+('44.444.444/0001-44', 'E-Commerce Rápido', '11 5555-1005', 'Em Dia'),
+('55.555.555/0001-55', 'Farmacêutica Viva Bem', '31 5555-1006', 'Em Dia'),
+('66.666.666/0001-66', 'Distribuidora Global', '71 5555-1007', 'Atrasado'),
+('77.777.777/0001-77', 'Textil Luxo', '85 5555-1008', 'Em Dia'),
+('88.888.888/0001-88', 'Indústria Química Brilhante', '19 5555-1009', 'Pendente'),
+('99.999.999/0001-99', 'Logística Ágil', '61 5555-1010', 'Em Dia'),
+('10.101.101/0001-00', 'Softwares Inovadores', '11 5555-1011', 'Em Dia'),
+('12.121.121/0001-12', 'Mineração Pesada', '31 5555-1012', 'Atrasado'),
+('13.131.131/0001-13', 'Café Gourmet Brasil', '81 5555-1013', 'Em Dia'),
+('14.141.141/0001-14', 'Plásticos Modernos', '21 5555-1014', 'Pendente'),
+('15.151.151/0001-15', 'Serviços Financeiros Max', '11 5555-1015', 'Em Dia'),
+('16.161.161/0001-16', 'Pet Shop Felizes', '41 5555-1016', 'Em Dia'),
+('17.171.171/0001-17', 'Importadora Marítima', '92 5555-1017', 'Atrasado'),
+('18.181.181/0001-18', 'Gráfica Expressa', '62 5555-1018', 'Em Dia'),
+('19.191.191/0001-19', 'Móveis Planejados', '53 5555-1019', 'Pendente'),
+('20.202.202/0001-20', 'Consultoria Executiva', '11 5555-1020', 'Em Dia'),
+('21.212.212/0001-21', 'Tecnologia Avançada BR', '11 5555-1021', 'Em Dia'),
+('23.232.232/0001-23', 'Materiais Elétricos P.R.', '41 5555-1023', 'Atrasado'),
+('24.242.242/0001-24', 'Grãos do Campo S.A.', '54 5555-1024', 'Em Dia'),
+('25.252.252/0001-25', 'Auto Peças Veloz', '11 5555-1025', 'Pendente'),
+('26.262.262/0001-26', 'Produtos de Limpeza Jato', '31 5555-1026', 'Em Dia'),
+('27.272.272/0001-27', 'Cosméticos Beleza Pura', '21 5555-1027', 'Em Dia'),
+('28.282.282/0001-28', 'Moveleira Design', '84 5555-1028', 'Atrasado'),
+('29.292.292/0001-29', 'Papelaria Estudo', '62 5555-1029', 'Em Dia'),
+('30.303.303/0001-30', 'Bebidas Premium', '81 5555-1030', 'Pendente'),
+('31.313.313/0001-31', 'Ferramentas Profissionais', '11 5555-1031', 'Em Dia'),
+('32.323.323/0001-32', 'Embalagens Sustentáveis', '51 5555-1032', 'Em Dia'),
+('34.343.343/0001-34', 'Cabelereiros Luxo', '19 5555-1034', 'Atrasado'),
+('35.353.353/0001-35', 'Tecidos Finos', '21 5555-1035', 'Em Dia'),
+('36.363.363/0001-36', 'Pneus e Rodas', '41 5555-1036', 'Pendente'),
+('37.373.373/0001-37', 'Revestimentos Cerâmicos', '11 5555-1037', 'Em Dia'),
+('38.383.383/0001-38', 'Laticínios da Serra', '31 5555-1038', 'Em Dia'),
+('39.393.393/0001-39', 'Equipamentos Médicos', '71 5555-1039', 'Atrasado'),
+('40.404.404/0001-40', 'Livros Didáticos', '85 5555-1040', 'Em Dia'),
+('41.414.414/0001-41', 'Tintas Artísticas', '19 5555-1041', 'Pendente'),
+('42.424.424/0001-42', 'Minas Express Log.', '61 5555-1042', 'Em Dia'),
+('43.434.434/0001-43', 'Madeireira Legal', '11 5555-1043', 'Em Dia'),
+('45.454.454/0001-45', 'Metal Leve', '31 5555-1045', 'Atrasado'),
+('46.464.464/0001-46', 'Petro Distribuidora', '81 5555-1046', 'Em Dia'),
+('47.474.474/0001-47', 'Ferragens Solução', '21 5555-1047', 'Pendente'),
+('48.484.484/0001-48', 'Jóias e Relógios', '11 5555-1048', 'Em Dia'),
+('49.494.494/0001-49', 'Calçados de Couro', '41 5555-1049', 'Em Dia'),
+('50.505.505/0001-50', 'Indústria Alimentícia Delta', '51 5555-1050', 'Atrasado'),
+('51.515.515/0001-51', 'Fios e Cabos', '11 5555-1051', 'Em Dia'),
+('52.525.525/0001-52', 'Vidraçaria Central', '31 5555-1052', 'Pendente'),
+('53.535.535/0001-53', 'Mecânica Rápida', '71 5555-1053', 'Em Dia'),
+('54.545.545/0001-54', 'Distribuidora do Nordeste', '85 5555-1054', 'Em Dia'),
+('56.565.565/0001-56', 'Pequenas Lojas', '19 5555-1056', 'Atrasado'),
+('57.575.575/0001-57', 'Agropecuária Sul', '61 5555-1057', 'Em Dia'),
+('58.585.585/0001-58', 'Escritórios Modernos', '11 5555-1058', 'Pendente'),
+('59.595.595/0001-59', 'Equipamentos de Segurança', '31 5555-1059', 'Em Dia'),
+('60.606.606/0001-60', 'Placas Solares SP', '81 5555-1060', 'Em Dia'),
+('61.616.616/0001-61', 'Roupas Infantis', '21 5555-1061', 'Atrasado'),
+('62.626.626/0001-62', 'Indústria de Brinquedos', '41 5555-1062', 'Em Dia'),
+('63.636.636/0001-63', 'Doces e Confeitos', '51 5555-1063', 'Pendente'),
+('64.646.646/0001-64', 'Exportadora Global', '11 5555-1064', 'Em Dia');
+
+-- Inserção em Motoristas (60 registros)
+INSERT INTO Motoristas (CNH, nome, telefone, situacao) VALUES
+('12345678901', 'Pedro Silva', '9999-1111', 'Ativo'), ('23456789012', 'Mariana Gomes', '9999-2222', 'Férias'),
+('34567890123', 'Roberto Oliveira', '9999-3333', 'Ativo'), ('45678901234', 'Juliana Costa', '9999-4444', 'Inativo'),
+('56789012345', 'André Luiz', '9999-5555', 'Manutenção'), ('67890123456', 'Felipe Santos', '9999-6666', 'Ativo'),
+('78901234567', 'Laura Mendes', '9999-7777', 'Ativo'), ('89012345678', 'Guilherme Rocha', '9999-8888', 'Ativo'),
+('90123456789', 'Patrícia Vieira', '9999-9999', 'Férias'), ('01234567890', 'Marcelo Alves', '9888-0000', 'Ativo'),
+('11223344556', 'Vitória Lima', '9888-1111', 'Ativo'), ('22334455667', 'Paulo Nunes', '9888-2222', 'Inativo'),
+('33445566778', 'Aline Ferreira', '9888-3333', 'Manutenção'), ('44556677889', 'Ricardo Souza', '9888-4444', 'Ativo'),
+('55667788990', 'Camila Martins', '9888-5555', 'Ativo'), ('66778899001', 'Eduardo Barbosa', '9888-6666', 'Férias'),
+('77889900112', 'Giovanna Xavier', '9888-7777', 'Ativo'), ('88990011223', 'Renato Zanon', '9888-8888', 'Ativo'),
+('99001122334', 'Bianca Ribeiro', '9888-9999', 'Ativo'), ('00112233445', 'Thiago Morais', '9777-0000', 'Manutenção'),
+('10203040506', 'Júlio César', '9777-1111', 'Ativo'), ('20304050607', 'Fernanda Lima', '9777-2222', 'Ativo'),
+('30405060708', 'Gustavo Pires', '9777-3333', 'Manutenção'), ('40506070809', 'Helen Martins', '9777-4444', 'Ativo'),
+('50607080910', 'Ivan Ramos', '9777-5555', 'Férias'), ('60708091021', 'Kelly Soares', '9777-6666', 'Ativo'),
+('70809102132', 'Lucas Toledo', '9777-7777', 'Ativo'), ('80910213243', 'Mônica Uchôa', '9777-8888', 'Inativo'),
+('91021324354', 'Natan Vianna', '9777-9999', 'Ativo'), ('02132435465', 'Olívia Werner', '9666-0000', 'Manutenção'),
+('12312312312', 'Paulo Xavier', '9666-1111', 'Ativo'), ('23423423423', 'Quésia Zanoni', '9666-2222', 'Ativo'),
+('34534534534', 'Ronaldo Abreu', '9666-3333', 'Férias'), ('45645645645', 'Sandra Barreto', '9666-4444', 'Ativo'),
+('56756756756', 'Tadeu Coelho', '9666-5555', 'Ativo'), ('67867867867', 'Úrsula Diniz', '9666-6666', 'Inativo'),
+('78978978978', 'Valmir Elias', '9666-7777', 'Manutenção'), ('89089089089', 'Wanda Franco', '9666-8888', 'Ativo'),
+('90190190190', 'Xavier Gomes', '9666-9999', 'Ativo'), ('01201201201', 'Yara Holanda', '9555-0000', 'Ativo'),
+('13579246800', 'Zeca Índio', '9555-1111', 'Férias'), ('24680135790', 'Bento Jardim', '9555-2222', 'Ativo'),
+('35791246801', 'Caio Lacerda', '9555-3333', 'Ativo'), -- CNH ÚNICA
+('46802357912', 'Débora Medeiros', '9555-4444', 'Manutenção'),
+('57913468023', 'Éder Neves', '9555-5555', 'Ativo'), ('68024579134', 'Flávia Pinheiro', '9555-6666', 'Ativo'),
+('79135680245', 'Gerson Queiroz', '9555-7777', 'Ativo'), ('80246791356', 'Hélio Rosa', '9555-8888', 'Inativo'),
+('91357802467', 'Irene Sales', '9555-9999', 'Ativo'), ('02468913578', 'João Toledo', '9444-0000', 'Manutenção'),
+('13579024689', 'Lídia Uzeda', '9444-1111', 'Ativo'), ('24680135791', 'Murilo Valente', '9444-2222', 'Ativo'), -- CNH CORRIGIDA
+('33333333333', 'Nina Xavier', '9444-3333', 'Férias'), -- CNH CORRIGIDA (Anteriormente 35791246801 - DUPLICADA)
+('46802357913', 'Orlando Zanetti', '9444-4444', 'Ativo'), -- CNH CORRIGIDA
+('57913468024', 'Pâmela Almeida', '9444-5555', 'Ativo'), -- CNH CORRIGIDA
+('68024579135', 'Quincy Borges', '9444-6666', 'Ativo'), -- CNH CORRIGIDA
+('79135680246', 'Ricardo Castro', '9444-7777', 'Ativo'), -- CNH CORRIGIDA
+('80246791357', 'Suelen Duarte', '9444-8888', 'Ativo'), -- CNH CORRIGIDA
+('91357802468', 'Túlio Esteves', '9444-9999', 'Manutenção'), -- CNH CORRIGIDA
+('02468913579', 'Viviane Freitas', '9333-0000', 'Ativo'); -- CNH CORRIGIDA
+
+-- Inserção em Veículos (60 registros)
+INSERT INTO Veiculos (placa, modelo, ano, capacidade, status_veiculo) VALUES
+('ABC1A23', 'Caminhão Toco', 2020, 10.50, 'Em Rota'), ('DEF4B56', 'Van Sprinter', 2022, 1.50, 'Disponível'),
+('GHI7C89', 'Carreta Baú', 2018, 30.00, 'Manutenção'), ('JKL0D12', 'VUC', 2023, 3.00, 'Disponível'),
+('MNO3E45', 'Caminhão 3/4', 2019, 6.00, 'Em Rota'), ('PQR6F78', 'Carreta Sider', 2017, 28.00, 'Disponível'),
+('STU9G01', 'Fiorino', 2024, 0.50, 'Disponível'), ('VWX2H34', 'Caminhão Toco Refrigerado', 2021, 8.00, 'Em Rota'),
+('YZA5I67', 'Van Executiva', 2022, 1.00, 'Manutenção'), ('BCD8J90', 'Carreta Tanque', 2016, 35.00, 'Disponível'),
+('EFG1K23', 'Caminhão Baú', 2020, 12.00, 'Em Rota'), ('HIJ4L56', 'Picape Cabine Dupla', 2023, 0.80, 'Disponível'),
+('KLM7M89', 'Carreta Grade Baixa', 2018, 32.00, 'Disponível'), ('NOP0N12', 'VUC Refrigerado', 2022, 2.50, 'Em Rota'),
+('QRS3O45', 'Caminhão Munck', 2019, 15.00, 'Manutenção'), ('TUV6P78', 'Van Passageiros', 2024, 1.20, 'Disponível'),
+('WXY9Q01', 'Carreta Porta Contêiner', 2017, 30.00, 'Em Rota'), ('ZAB2R34', 'Furgão', 2021, 0.60, 'Disponível'),
+('CDE5S67', 'Caminhão Bitrem', 2016, 40.00, 'Manutenção'), ('FGH8T90', 'Van Carga', 2023, 2.00, 'Em Rota'),
+('HJK1L23', 'Caminhão Bi-Truck', 2020, 23.00, 'Em Rota'), ('MNO4P56', 'HR', 2023, 1.00, 'Disponível'),
+('QRS7T89', 'Carreta Cegonha', 2019, 25.00, 'Disponível'), ('UVW0X12', 'Saveiro', 2024, 0.40, 'Manutenção'),
+('YZA3B45', 'Caminhão Plataforma', 2021, 15.00, 'Em Rota'), ('CDE6F78', 'Carreta Refrigerada', 2018, 20.00, 'Disponível'),
+('FGH9I01', 'Kombi', 2015, 0.75, 'Disponível'), ('JKL2M34', 'Caminhão Bau Frigorífico', 2022, 10.00, 'Em Rota'),
+('NOP5Q67', 'Van Blindada', 2023, 1.50, 'Disponível'), ('RST8U90', 'Carreta Carga Seca', 2017, 35.00, 'Manutenção'),
+('VWX1Y23', 'Caminhão Leve', 2020, 5.00, 'Em Rota'), ('YZA4B56', 'Doblo', 2024, 0.60, 'Disponível'),
+('BCD7E89', 'Carreta Prancha', 2019, 38.00, 'Disponível'), ('EFG0H12', 'VUC Bau', 2022, 3.50, 'Em Rota'),
+('HIJ3K45', 'Caminhão Tanque', 2021, 18.00, 'Manutenção'), ('LMN6O78', 'Van Escola', 2024, 1.00, 'Disponível'),
+('PQR9S01', 'Carreta Boiadeira', 2018, 25.00, 'Em Rota'), ('TUV2W34', 'Caminhão Pipa', 2020, 14.00, 'Disponível'),
+('WXY5Z67', 'Moto de Carga', 2023, 0.10, 'Disponível'), ('ZAB8C90', 'Carreta Extensiva', 2017, 42.00, 'Em Rota'),
+('DAB1C23', 'Caminhão Coletor', 2022, 9.00, 'Disponível'), ('EFC4D56', 'Picape Estendida', 2023, 0.90, 'Manutenção'),
+('GHI7E89', 'Carreta Silo', 2020, 30.00, 'Disponível'), ('JKL0F12', 'VUC Teto Alto', 2021, 4.00, 'Em Rota'),
+('MNO3G45', 'Caminhão Roll-on', 2019, 16.00, 'Disponível'), ('PQR6H78', 'Van Baixa', 2024, 1.10, 'Disponível'),
+('STU9I01', 'Carreta Dolly', 2017, 26.00, 'Manutenção'), ('VWX2J34', 'Caminhão Frigorífico', 2022, 11.00, 'Em Rota'),
+('YZA5K67', 'Van Escolar', 2023, 1.40, 'Disponível'), ('BCD8L90', 'Carreta Gaiola', 2016, 28.00, 'Em Rota'),
+('EFG1M23', 'Caminhão Basculante', 2020, 13.00, 'Disponível'), ('HIJ4N56', 'Picape Simples', 2023, 0.70, 'Disponível'),
+('KLM7O89', 'Carreta Tanque Leite', 2018, 22.00, 'Manutenção'), ('NOP0P12', 'VUC Plataforma', 2022, 2.00, 'Em Rota'),
+('QRS3Q45', 'Caminhão Misto', 2019, 8.50, 'Disponível'), ('TUV6R78', 'Van Carga Seca', 2024, 1.60, 'Disponível'),
+('WXY9S01', 'Carreta Câmera Fria', 2017, 30.00, 'Em Rota'), ('ZAB2T34', 'Furgão Curto', 2021, 0.50, 'Manutenção'),
+('CDE5U67', 'Caminhão Guindaste', 2016, 17.00, 'Disponível'), ('FGH8V90', 'Van Executiva Luxo', 2023, 1.00, 'Em Rota');
+
+-- Inserção em Rotas (60 registros)
+INSERT INTO Rotas (origem, destino, distancia, prazo) VALUES
+('São Paulo', 'Rio de Janeiro', 430.00, 2), ('São Paulo', 'Curitiba', 400.00, 2),
+('Rio de Janeiro', 'Belo Horizonte', 450.00, 3), ('Curitiba', 'Porto Alegre', 700.00, 4),
+('Belo Horizonte', 'Brasília', 750.00, 5), ('Brasília', 'Goiânia', 200.00, 1),
+('Porto Alegre', 'Florianópolis', 470.00, 3), ('Florianópolis', 'São Paulo', 700.00, 4),
+('Recife', 'Salvador', 800.00, 5), ('Salvador', 'Fortaleza', 1350.00, 7),
+('Fortaleza', 'Natal', 500.00, 3), ('Manaus', 'Belém', 1500.00, 10),
+('Cuiabá', 'Campo Grande', 600.00, 4), ('Rio de Janeiro', 'Vitória', 520.00, 3),
+('São Paulo', 'Campinas', 100.00, 1), ('Belo Horizonte', 'Ouro Preto', 100.00, 1),
+('Curitiba', 'Foz do Iguaçu', 640.00, 4), ('Porto Alegre', 'Santa Maria', 300.00, 2),
+('Recife', 'João Pessoa', 120.00, 1), ('Goiânia', 'Palmas', 800.00, 5),
+('São Paulo', 'Recife', 2800.00, 10), ('Rio de Janeiro', 'Manaus', 4500.00, 15),
+('Curitiba', 'Salvador', 2000.00, 7), ('Belo Horizonte', 'Porto Velho', 3000.00, 12),
+('Porto Alegre', 'Macapá', 5000.00, 18), ('Salvador', 'Cuiabá', 2500.00, 10),
+('Fortaleza', 'Teresina', 600.00, 4), ('Manaus', 'Porto Alegre', 5500.00, 20),
+('Recife', 'Rio Branco', 4000.00, 15), ('Vitória', 'São Luís', 2200.00, 9),
+('Campo Grande', 'Recife', 2600.00, 11), ('João Pessoa', 'Belém', 1800.00, 8),
+('Natal', 'Florianópolis', 3000.00, 12), ('São Paulo', 'São José dos Campos', 100.00, 1),
+('Rio de Janeiro', 'Niterói', 20.00, 1), ('Curitiba', 'Londrina', 380.00, 2),
+('Belo Horizonte', 'Uberlândia', 550.00, 3), ('Porto Alegre', 'Pelotas', 250.00, 2),
+('Salvador', 'Feira de Santana', 110.00, 1), ('Fortaleza', 'Sobral', 250.00, 2),
+('Recife', 'Caruaru', 130.00, 1), ('Manaus', 'Itacoatiara', 270.00, 2),
+('Vitória', 'Guarapari', 50.00, 1), ('Campo Grande', 'Dourados', 230.00, 2),
+('João Pessoa', 'Campina Grande', 120.00, 1), ('Natal', 'Mossoró', 280.00, 2),
+('São Paulo', 'Ribeirão Preto', 315.00, 2), ('Rio de Janeiro', 'Campos', 280.00, 2),
+('Curitiba', 'Paranaguá', 90.00, 1), ('Belo Horizonte', 'Juiz de Fora', 270.00, 2),
+('Porto Alegre', 'Passo Fundo', 290.00, 2), ('Salvador', 'Ilhéus', 460.00, 3),
+('Fortaleza', 'Jericoacoara', 300.00, 3), ('Recife', 'Olinda', 10.00, 1),
+('Manaus', 'Tefé', 600.00, 5), ('Vitória', 'São Mateus', 210.00, 2),
+('Campo Grande', 'Corumbá', 420.00, 3), ('João Pessoa', 'Patos', 310.00, 2),
+('Natal', 'Pipa', 80.00, 1), ('São Paulo', 'Santos', 70.00, 1);
+
+-- Inserção em Entregas (60 registros)
+INSERT INTO Entregas (cliente_cnpj, motorista_cnh, veiculo_placa, id_rota, matricula_adm_responsavel, data_saida, previsao_entrega, entrega_real, status_entrega) VALUES
+('00.000.000/0001-01', '12345678901', 'ABC1A23', 1, 'ADM003', '2025-11-01', '2025-11-03', '2025-11-03', 'Entregue'),
+('11.111.111/0001-11', '34567890123', 'MNO3E45', 2, 'ADM007', '2025-11-05', '2025-11-07', NULL, 'Em Trânsito'),
+('22.222.222/0001-22', '67890123456', 'VWX2H34', 3, 'ADM012', '2025-11-08', '2025-11-11', '2025-11-12', 'Entregue'),
+('33.333.333/0001-33', '78901234567', 'EFG1K23', 4, 'ADM016', '2025-11-10', '2025-11-14', NULL, 'Em Trânsito'),
+('44.444.444/0001-44', '89012345678', 'NOP0N12', 5, 'ADM020', '2025-11-12', '2025-11-17', NULL, 'Pendente'),
+('55.555.555/0001-55', '01234567890', 'WXY9Q01', 6, 'ADM003', '2025-11-15', '2025-11-16', '2025-11-16', 'Entregue'),
+('66.666.666/0001-66', '11223344556', 'FGH8T90', 7, 'ADM007', '2025-11-18', '2025-11-21', '2025-11-21', 'Entregue'),
+('77.777.777/0001-77', '44556677889', 'JKL0D12', 8, 'ADM012', '2025-11-20', '2025-11-24', NULL, 'Em Trânsito'),
+('88.888.888/0001-88', '55667788990', 'DEF4B56', 9, 'ADM016', '2025-11-22', '2025-11-27', '2025-11-27', 'Entregue'),
+('99.999.999/0001-99', '77889900112', 'STU9G01', 10, 'ADM020', '2025-11-24', '2025-12-01', NULL, 'Em Trânsito'),
+('10.101.101/0001-00', '88990011223', 'HIJ4L56', 11, 'ADM003', '2025-11-26', '2025-11-29', NULL, 'Pendente'),
+('12.121.121/0001-12', '99001122334', 'BCD8J90', 12, 'ADM007', '2025-11-01', '2025-11-11', '2025-11-12', 'Entregue'),
+('13.131.131/0001-13', '12345678901', 'MNO3E45', 13, 'ADM012', '2025-11-05', '2025-11-09', NULL, 'Em Trânsito'),
+('14.141.141/0001-14', '34567890123', 'EFG1K23', 14, 'ADM016', '2025-11-08', '2025-11-11', '2025-11-11', 'Entregue'),
+('15.151.151/0001-15', '67890123456', 'VWX2H34', 15, 'ADM020', '2025-11-10', '2025-11-11', NULL, 'Em Trânsito'),
+('16.161.161/0001-16', '78901234567', 'NOP0N12', 16, 'ADM003', '2025-11-12', '2025-11-13', '2025-11-14', 'Entregue'),
+('17.171.171/0001-17', '89012345678', 'WXY9Q01', 17, 'ADM007', '2025-11-15', '2025-11-18', NULL, 'Em Trânsito'),
+('18.181.181/0001-18', '01234567890', 'FGH8T90', 18, 'ADM012', '2025-11-18', '2025-11-20', '2025-11-20', 'Entregue'),
+('19.191.191/0001-19', '11223344556', 'JKL0D12', 19, 'ADM016', '2025-11-20', '2025-11-21', NULL, 'Pendente'),
+('20.202.202/0001-20', '44556677889', 'DEF4B56', 20, 'ADM020', '2025-11-22', '2025-11-27', '2025-11-27', 'Entregue'),
+('21.212.212/0001-21', '10203040506', 'HJK1L23', 21, 'ADM021', '2025-11-28', '2025-12-08', NULL, 'Em Trânsito'),
+('23.232.232/0001-23', '20304050607', 'MNO4P56', 22, 'ADM026', '2025-11-29', '2025-12-14', NULL, 'Em Trânsito'),
+('24.242.242/0001-24', '40506070809', 'QRS7T89', 23, 'ADM031', '2025-11-30', '2025-12-07', '2025-12-07', 'Entregue'),
+('25.252.252/0001-25', '60708091021', 'YZA3B45', 24, 'ADM036', '2025-12-01', '2025-12-13', NULL, 'Pendente'),
+('26.262.262/0001-26', '70809102132', 'JKL2M34', 25, 'ADM041', '2025-12-02', '2025-12-20', '2025-12-21', 'Entregue'),
+('27.272.272/0001-27', '91021324354', 'VWX1Y23', 26, 'ADM046', '2025-12-03', '2025-12-04', NULL, 'Em Trânsito'),
+('28.282.282/0001-28', '12312312312', 'EFG0H12', 27, 'ADM051', '2025-12-04', '2025-12-08', '2025-12-08', 'Entregue'),
+('29.292.292/0001-29', '23423423423', 'NOP0P12', 28, 'ADM056', '2025-12-05', '2025-12-09', NULL, 'Em Trânsito'),
+('30.303.303/0001-30', '45645645645', 'PQR9S01', 29, 'ADM021', '2025-12-06', '2025-12-11', '2025-12-10', 'Entregue'),
+('31.313.313/0001-31', '56756756756', 'TUV2W34', 30, 'ADM026', '2025-12-07', '2025-12-14', NULL, 'Pendente'),
+('32.323.323/0001-32', '78978978978', 'DAB1C23', 31, 'ADM031', '2025-12-08', '2025-12-19', NULL, 'Em Trânsito'),
+('34.343.343/0001-34', '89089089089', 'GHI7E89', 32, 'ADM036', '2025-12-09', '2025-12-24', NULL, 'Em Trânsito'),
+('35.353.353/0001-35', '01201201201', 'JKL0F12', 33, 'ADM041', '2025-12-10', '2025-12-22', '2025-12-22', 'Entregue'),
+('36.363.363/0001-36', '24680135790', 'MNO3G45', 34, 'ADM046', '2025-12-11', '2025-12-14', NULL, 'Pendente'),
+('37.373.373/0001-37', '35791246801', 'VWX2J34', 35, 'ADM051', '2025-12-12', '2025-12-13', '2025-12-13', 'Entregue'),
+('38.383.383/0001-38', '57913468023', 'BCD8L90', 36, 'ADM056', '2025-12-13', '2025-12-14', '2025-12-14', 'Entregue'),
+('39.393.393/0001-39', '68024579134', 'EFG1M23', 37, 'ADM021', '2025-12-14', '2025-12-17', NULL, 'Em Trânsito'),
+('40.404.404/0001-40', '79135680245', 'HIJ4N56', 38, 'ADM026', '2025-12-15', '2025-12-17', '2025-12-17', 'Entregue'),
+('41.414.414/0001-41', '91357802467', 'QRS3Q45', 39, 'ADM031', '2025-12-16', '2025-12-19', NULL, 'Pendente'),
+('42.424.424/0001-42', '02468913578', 'WXY9S01', 40, 'ADM036', '2025-12-17', '2025-12-24', NULL, 'Em Trânsito'),
+('43.434.434/0001-43', '13579024689', 'ABC1A23', 41, 'ADM041', '2025-12-18', '2025-12-19', '2025-12-19', 'Entregue'),
+('45.454.454/0001-45', '24680135791', 'MNO4P56', 42, 'ADM046', '2025-12-19', '2025-12-21', NULL, 'Em Trânsito'),
+('46.464.464/0001-46', '33333333333', 'QRS7T89', 43, 'ADM051', '2025-12-20', '2025-12-23', '2025-12-23', 'Entregue'),
+('47.474.474/0001-47', '46802357913', 'YZA3B45', 44, 'ADM056', '2025-12-21', '2025-12-24', NULL, 'Pendente'),
+('48.484.484/0001-48', '57913468024', 'JKL2M34', 45, 'ADM021', '2025-12-22', '2025-12-23', '2025-12-23', 'Entregue'),
+('49.494.494/0001-49', '68024579135', 'VWX1Y23', 46, 'ADM026', '2025-12-23', '2025-12-27', NULL, 'Em Trânsito'),
+('50.505.505/0001-50', '79135680246', 'EFG0H12', 47, 'ADM031', '2025-12-24', '2025-12-27', '2025-12-28', 'Entregue'),
+('51.515.515/0001-51', '80246791357', 'NOP0P12', 48, 'ADM036', '2025-12-25', '2025-12-27', NULL, 'Em Trânsito'),
+('52.525.525/0001-52', '91357802468', 'PQR9S01', 49, 'ADM041', '2025-12-26', '2025-12-27', NULL, 'Pendente'),
+('53.535.535/0001-53', '02468913579', 'TUV2W34', 50, 'ADM046', '2025-12-27', '2026-01-03', NULL, 'Em Trânsito'),
+('54.545.545/0001-54', '13579024689', 'DAB1C23', 51, 'ADM051', '2025-12-28', '2026-01-04', '2026-01-04', 'Entregue'),
+('56.565.565/0001-56', '24680135791', 'GHI7E89', 52, 'ADM056', '2025-12-29', '2026-01-01', NULL, 'Em Trânsito'),
+('57.575.575/0001-57', '33333333333', 'JKL0F12', 53, 'ADM021', '2025-12-30', '2026-01-03', '2026-01-03', 'Entregue'),
+('58.585.585/0001-58', '46802357913', 'MNO3G45', 54, 'ADM026', '2025-12-31', '2026-01-02', NULL, 'Pendente'),
+('59.595.595/0001-59', '57913468024', 'VWX2J34', 55, 'ADM031', '2026-01-01', '2026-01-02', '2026-01-03', 'Entregue'),
+('60.606.606/0001-60', '68024579135', 'BCD8L90', 56, 'ADM036', '2026-01-02', '2026-01-04', NULL, 'Em Trânsito'),
+('61.616.616/0001-61', '79135680246', 'EFG1M23', 57, 'ADM041', '2026-01-03', '2026-01-05', '2026-01-05', 'Entregue'),
+('62.626.626/0001-62', '80246791357', 'HIJ4N56', 58, 'ADM046', '2026-01-04', '2026-01-06', NULL, 'Em Trânsito'),
+('63.636.636/0001-63', '91357802468', 'QRS3Q45', 59, 'ADM051', '2026-01-05', '2026-01-06', NULL, 'Pendente'),
+('64.646.646/0001-64', '02468913579', 'WXY9S01', 60, 'ADM056', '2026-01-06', '2026-01-07', '2026-01-07', 'Entregue');
+
+-- Inserção em Ocorrências (60 registros)
+INSERT INTO Ocorrencias (id_entrega, tipo, descricao, data_ocorrencia) VALUES
+(1, 'Outro', 'Cliente ausente na primeira tentativa.', '2025-11-03 10:00:00'),
+(2, 'Atraso', 'Congestionamento inesperado na rota.', '2025-11-06 14:30:00'),
+(3, 'Dano', 'Embalagem levemente amassada no manuseio.', '2025-11-10 09:00:00'),
+(4, 'Problema Veicular', 'Pneu furado na estrada, reparo em 3h.', '2025-11-11 11:45:00'),
+(5, 'Extravio', 'Item incorreto carregado inicialmente.', '2025-11-12 16:00:00'),
+(6, 'Outro', 'Entrega antecipada devido a otimização de rota.', '2025-11-15 08:30:00'),
+(7, 'Atraso', 'Condições climáticas adversas.', '2025-11-19 19:15:00'),
+(8, 'Problema Veicular', 'Luz de advertência acesa, verificação em posto.', '2025-11-21 10:00:00'),
+(9, 'Outro', 'Confirmação de endereço com o cliente.', '2025-11-23 13:00:00'),
+(10, 'Atraso', 'Bloqueio de rodovia programado.', '2025-11-25 07:00:00'),
+(11, 'Dano', 'Caixa grande rasgada durante o desembarque.', '2025-11-27 15:30:00'),
+(12, 'Outro', 'Documentação da carga incompleta, resolvida em 1h.', '2025-11-02 11:00:00'),
+(13, 'Problema Veicular', 'Troca de óleo de emergência.', '2025-11-07 14:00:00'),
+(14, 'Atraso', 'Filas longas no posto fiscal.', '2025-11-10 17:00:00'),
+(15, 'Dano', 'Produto sensível sofreu leve impacto.', '2025-11-11 08:45:00'),
+(16, 'Outro', 'Cliente solicitou reagendamento para o dia seguinte.', '2025-11-13 14:00:00'),
+(17, 'Extravio', 'Perda de um volume pequeno (reavaliando).', '2025-11-16 12:00:00'),
+(18, 'Problema Veicular', 'Vazamento de combustível, reparo rápido.', '2025-11-19 10:30:00'),
+(19, 'Atraso', 'Engarrafamento na capital.', '2025-11-20 18:00:00'),
+(20, 'Outro', 'Entrega concluída sem intercorrências.', '2025-11-27 15:00:00'),
+(21, 'Atraso', 'Parada não programada devido a mau tempo.', '2025-11-29 10:00:00'),
+(22, 'Problema Veicular', 'Superaquecimento do motor, pausa obrigatória.', '2025-12-01 12:30:00'),
+(23, 'Outro', 'Fiscalização de peso na estrada.', '2025-12-05 15:00:00'),
+(24, 'Dano', 'Palete quebrado durante o carregamento.', '2025-12-01 09:00:00'),
+(25, 'Extravio', 'Um volume não foi contabilizado no destino.', '2025-12-21 10:30:00'),
+(26, 'Atraso', 'Trânsito pesado na entrada da cidade.', '2025-12-03 18:00:00'),
+(27, 'Problema Veicular', 'Farol queimado, trocado em rota.', '2025-12-07 14:00:00'),
+(28, 'Outro', 'Motorista precisou desviar de acidente grave.', '2025-12-05 16:30:00'),
+(29, 'Atraso', 'Problemas com a documentação do veículo.', '2025-12-09 11:00:00'),
+(30, 'Dano', 'Produto de vidro com rachadura.', '2025-12-07 09:30:00'),
+(31, 'Problema Veicular', 'Vazamento de óleo, reparo urgente.', '2025-12-10 13:00:00'),
+(32, 'Extravio', 'Uma caixa da remessa foi misturada em outra entrega.', '2025-12-15 15:00:00'),
+(33, 'Outro', 'Agendamento de entrega noturna com sucesso.', '2025-12-22 20:00:00'),
+(34, 'Atraso', 'Obra na pista gerou 4h de lentidão.', '2025-12-13 09:00:00'),
+(35, 'Dano', 'Caixa rasgada por mau uso do cliente no recebimento.', '2025-12-13 15:00:00'),
+(36, 'Problema Veicular', 'Falha no sistema de freios, veículo parado.', '2025-12-14 10:00:00'),
+(37, 'Extravio', 'Item de pequeno valor não encontrado no inventário.', '2025-12-16 14:00:00'),
+(38, 'Outro', 'Entrega antecipada devido a rota eficiente.', '2025-12-17 11:00:00'),
+(39, 'Atraso', 'Greve de caminhoneiros em ponto estratégico.', '2025-12-19 08:30:00'),
+(40, 'Problema Veicular', 'Pneu reserva danificado, aguardando socorro.', '2025-12-21 12:00:00'),
+(41, 'Outro', 'Alteração de endereço no último momento.', '2025-12-19 14:00:00'),
+(42, 'Atraso', 'Atraso na liberação da mercadoria na alfândega.', '2025-12-21 16:00:00'),
+(43, 'Dano', 'Produto molhado devido a infiltração no baú.', '2025-12-23 10:00:00'),
+(44, 'Problema Veicular', 'Bateria descarregada, auxílio imediato.', '2025-12-24 07:00:00'),
+(45, 'Extravio', 'Perda de documento de transporte (CT-e).', '2025-12-23 18:00:00'),
+(46, 'Outro', 'Cliente solicitou conferência detalhada da carga.', '2025-12-26 13:00:00'),
+(47, 'Atraso', 'Feriado inesperado na rota.', '2025-12-27 10:00:00'),
+(48, 'Problema Veicular', 'Ruptura na mangueira de ar.', '2025-12-27 15:00:00'),
+(49, 'Dano', 'Carga escorregou e causou danos leves.', '2025-12-26 18:00:00'),
+(50, 'Extravio', 'Um item da nota fiscal faltando na conferência.', '2026-01-03 10:00:00'),
+(51, 'Outro', 'Carga retida por tempo na barreira sanitária.', '2026-01-04 11:00:00'),
+(52, 'Atraso', 'Forte neblina na serra.', '2025-12-30 09:00:00'),
+(53, 'Problema Veicular', 'Pneu estourado na estrada de terra.', '2026-01-02 14:00:00'),
+(54, 'Dano', 'Produto sensível ao calor danificado.', '2026-01-02 10:00:00'),
+(55, 'Extravio', 'Pacote sumiu entre o armazém e o caminhão.', '2026-01-03 16:00:00'),
+(56, 'Outro', 'Contato com o motorista foi perdido por 2h.', '2026-01-02 12:00:00'),
+(57, 'Atraso', 'Tempo excessivo de espera para descarregamento.', '2026-01-05 13:00:00'),
+(58, 'Problema Veicular', 'Problema na ignição, não ligava.', '2026-01-04 18:00:00'),
+(59, 'Dano', 'Caixa amassada, produto intacto.', '2026-01-06 14:00:00'),
+(60, 'Extravio', 'Perda total da carga por roubo (último registro).', '2026-01-07 10:00:00');
+
+-- Inserção em Pagamentos (60 registros)
+INSERT INTO Pagamentos (cliente_cnpj, id_entrega, valor, forma, status_pagamento) VALUES
+('00.000.000/0001-01', 1, 450.00, 'Boleto', 'Pago'), ('11.111.111/0001-11', 2, 850.50, 'Transferência', 'Pendente'),
+('22.222.222/0001-22', 3, 320.00, 'Cartão', 'Pago'), ('33.333.333/0001-33', 4, 1200.00, 'Boleto', 'Pendente'),
+('44.444.444/0001-44', 5, 250.75, 'Transferência', 'Pago'), ('55.555.555/0001-55', 6, 150.00, 'Cartão', 'Pago'),
+('66.666.666/0001-66', 7, 980.00, 'Boleto', 'Estornado'), ('77.777.777/0001-77', 8, 550.90, 'Transferência', 'Pendente'),
+('88.888.888/0001-88', 9, 750.00, 'Cartão', 'Pago'), ('99.999.999/0001-99', 10, 1500.25, 'Boleto', 'Pendente'),
+('10.101.101/0001-00', 11, 190.50, 'Transferência', 'Pago'), ('12.121.121/0001-12', 12, 2100.00, 'Cartão', 'Pago'),
+('13.131.131/0001-13', 13, 350.00, 'Boleto', 'Pendente'), ('14.141.141/0001-14', 14, 620.40, 'Transferência', 'Pago'),
+('15.151.151/0001-15', 15, 105.00, 'Cartão', 'Pendente'), ('16.161.161/0001-16', 16, 480.00, 'Boleto', 'Pago'),
+('17.171.171/0001-17', 17, 1300.00, 'Transferência', 'Estornado'), ('18.181.181/0001-18', 18, 95.50, 'Cartão', 'Pago'),
+('19.191.191/0001-19', 19, 700.00, 'Boleto', 'Pendente'), ('20.202.202/0001-20', 20, 180.20, 'Transferência', 'Pago'),
+('21.212.212/0001-21', 21, 1500.00, 'Boleto', 'Pago'), ('23.232.232/0001-23', 22, 1800.00, 'Transferência', 'Pendente'),
+('24.242.242/0001-24', 23, 750.00, 'Cartão', 'Pago'), ('25.252.252/0001-25', 24, 450.00, 'Boleto', 'Pendente'),
+('26.262.262/0001-26', 25, 2300.00, 'Transferência', 'Pago'), ('27.272.272/0001-27', 26, 120.00, 'Cartão', 'Pago'),
+('28.282.282/0001-28', 27, 890.00, 'Boleto', 'Estornado'), ('29.292.292/0001-29', 28, 550.00, 'Transferência', 'Pendente'),
+('30.303.303/0001-30', 29, 1400.00, 'Cartão', 'Pago'), ('31.313.313/0001-31', 30, 190.00, 'Boleto', 'Pendente'),
+('32.323.323/0001-32', 31, 2500.00, 'Transferência', 'Pago'), ('34.343.343/0001-34', 32, 350.00, 'Cartão', 'Pago'),
+('35.353.353/0001-35', 33, 1100.00, 'Boleto', 'Pendente'), ('36.363.363/0001-36', 34, 600.00, 'Transferência', 'Pago'),
+('37.373.373/0001-37', 35, 1250.00, 'Cartão', 'Pendente'), ('38.383.383/0001-38', 36, 950.00, 'Boleto', 'Pago'),
+('39.393.393/0001-39', 37, 210.00, 'Transferência', 'Estornado'), ('40.404.404/0001-40', 38, 770.00, 'Cartão', 'Pago'),
+('41.414.414/0001-41', 39, 1600.00, 'Boleto', 'Pendente'), ('42.424.424/0001-42', 40, 200.00, 'Transferência', 'Pago'),
+('43.434.434/0001-43', 41, 105.00, 'Cartão', 'Pago'), ('45.454.454/0001-45', 42, 580.00, 'Boleto', 'Pendente'),
+('46.464.464/0001-46', 43, 1750.00, 'Transferência', 'Pago'), ('47.474.474/0001-47', 44, 300.00, 'Cartão', 'Pendente'),
+('48.484.484/0001-48', 45, 990.00, 'Boleto', 'Pago'), ('49.494.494/0001-49', 46, 220.00, 'Transferência', 'Pago'),
+('50.505.505/0001-50', 47, 1350.00, 'Cartão', 'Estornado'), ('51.515.515/0001-51', 48, 400.00, 'Boleto', 'Pendente'),
+('52.525.525/0001-52', 49, 1650.00, 'Transferência', 'Pago'), ('53.535.535/0001-53', 50, 75.00, 'Cartão', 'Pendente'),
+('54.545.545/0001-54', 51, 1900.00, 'Boleto', 'Pago'), ('56.565.565/0001-56', 52, 280.00, 'Transferência', 'Pendente'),
+('57.575.575/0001-57', 53, 1150.00, 'Cartão', 'Pago'), ('58.585.585/0001-58', 54, 350.00, 'Boleto', 'Pendente'),
+('59.595.595/0001-59', 55, 680.00, 'Transferência', 'Pago'), ('60.606.606/0001-60', 56, 1850.00, 'Cartão', 'Pendente'),
+('61.616.616/0001-61', 57, 420.00, 'Boleto', 'Estornado'), ('62.626.626/0001-62', 58, 150.00, 'Transferência', 'Pago'),
+('63.636.636/0001-63', 59, 1200.00, 'Cartão', 'Pendente'), ('64.646.646/0001-64', 60, 2000.00, 'Boleto', 'Pago');
+
+-- Inserção em Monitoramento (60 registros)
+INSERT INTO Monitoramento (matricula_adm, id_entrega, data_monitoramento, descricao_acao) VALUES
+('ADM003', 1, '2025-11-01 10:00:00', 'Confirmação inicial do pedido.'),
+('ADM007', 2, '2025-11-06 15:00:00', 'Verificação de atraso e contato com motorista.'),
+('ADM012', 3, '2025-11-10 11:30:00', 'Registro de ocorrência de dano leve.'),
+('ADM016', 4, '2025-11-11 12:00:00', 'Acompanhamento de reparo veicular.'),
+('ADM020', 5, '2025-11-12 17:00:00', 'Revalidação de carga após extravio inicial.'),
+('ADM003', 6, '2025-11-15 09:00:00', 'Fechamento de entrega antecipada.'),
+('ADM007', 7, '2025-11-19 20:00:00', 'Atualização de prazo devido ao clima.'),
+('ADM012', 8, '2025-11-21 10:30:00', 'Registro de problema no veículo em trânsito.'),
+('ADM016', 9, '2025-11-23 14:00:00', 'Confirmação de dados do cliente.'),
+('ADM020', 10, '2025-11-25 08:00:00', 'Comunicação de bloqueio de rodovia.'),
+('ADM003', 11, '2025-11-27 16:00:00', 'Registro de dano no desembarque.'),
+('ADM007', 12, '2025-11-02 12:00:00', 'Resolução de pendência documental.'),
+('ADM012', 13, '2025-11-07 15:00:00', 'Monitoramento da parada para manutenção.'),
+('ADM016', 14, '2025-11-10 18:00:00', 'Aviso de atraso por fila em posto fiscal.'),
+('ADM020', 15, '2025-11-11 09:00:00', 'Registro de impacto em produto sensível.'),
+('ADM003', 16, '2025-11-13 14:30:00', 'Processamento de reagendamento solicitado pelo cliente.'),
+('ADM007', 17, '2025-11-16 13:00:00', 'Abertura de investigação de extravio de volume.'),
+('ADM012', 18, '2025-11-19 11:00:00', 'Acompanhamento de reparo veicular rápido.'),
+('ADM016', 19, '2025-11-20 19:00:00', 'Notificação de atraso por trânsito.'),
+('ADM020', 20, '2025-11-27 15:30:00', 'Fechamento final da entrega e satisfação do cliente.'),
+('ADM021', 21, '2025-11-28 11:00:00', 'Confirmação de saída da rota longa.'),
+('ADM026', 22, '2025-11-30 14:00:00', 'Acompanhamento de parada para reparo.'),
+('ADM031', 23, '2025-12-05 16:30:00', 'Verificação de conformidade na alfândega.'),
+('ADM036', 24, '2025-12-01 09:30:00', 'Registro de avaria no embarque.'),
+('ADM041', 25, '2025-12-21 11:00:00', 'Registro de extravio de volume (investigação).'),
+('ADM046', 26, '2025-12-03 19:00:00', 'Notificação de atraso por trânsito.'),
+('ADM051', 27, '2025-12-07 14:30:00', 'Aprovação de auxílio mecânico.'),
+('ADM056', 28, '2025-12-05 17:00:00', 'Registro de desvio de rota por motivo de força maior.'),
+('ADM021', 29, '2025-12-09 11:30:00', 'Resolução de pendência documental da carga.'),
+('ADM026', 30, '2025-12-07 10:00:00', 'Acompanhamento de inspeção de danos.'),
+('ADM031', 31, '2025-12-10 13:30:00', 'Autorização de serviço de manutenção em rota.'),
+('ADM036', 32, '2025-12-15 15:30:00', 'Registro de extravio parcial (resolução em andamento).'),
+('ADM041', 33, '2025-12-22 20:30:00', 'Confirmação de entrega noturna.'),
+('ADM046', 34, '2025-12-13 09:30:00', 'Acompanhamento de lentidão por obra na via.'),
+('ADM051', 35, '2025-12-13 15:30:00', 'Registro de dano causado por manuseio do cliente.'),
+('ADM056', 36, '2025-12-14 10:30:00', 'Liberação de veículo após reparo emergencial.'),
+('ADM021', 37, '2025-12-16 14:30:00', 'Registro de perda de item (baixo valor).'),
+('ADM026', 38, '2025-12-17 11:30:00', 'Fechamento de entrega antecipada (rota otimizada).'),
+('ADM031', 39, '2025-12-19 09:00:00', 'Comunicação e gestão de atraso por paralisação.'),
+('ADM036', 40, '2025-12-21 12:30:00', 'Coordenação de substituição de pneu sobressalente.'),
+('ADM041', 41, '2025-12-19 14:30:00', 'Atualização de endereço de entrega.'),
+('ADM046', 42, '2025-12-21 16:30:00', 'Monitoramento da liberação alfandegária.'),
+('ADM051', 43, '2025-12-23 10:30:00', 'Registro de infiltração (veículo).'),
+('ADM056', 44, '2025-12-24 07:30:00', 'Solicitação e acompanhamento de carga de bateria.'),
+('ADM021', 45, '2025-12-23 18:30:00', 'Gestão de perda de documento (emissão de segunda via).'),
+('ADM026', 46, '2025-12-26 13:30:00', 'Acompanhamento da conferência de carga no cliente.'),
+('ADM031', 47, '2025-12-27 10:30:00', 'Registro de atraso por feriado.'),
+('ADM036', 48, '2025-12-27 15:30:00', 'Autorização de reparo de mangueira.'),
+('ADM041', 49, '2025-12-26 18:30:00', 'Registro de avaria por escorregamento.'),
+('ADM046', 50, '2026-01-03 10:30:00', 'Registro de falta de item em conferência.'),
+('ADM051', 51, '2026-01-04 11:30:00', 'Gestão de retenção por barreira sanitária.'),
+('ADM056', 52, '2025-12-30 09:30:00', 'Monitoramento de rota sob condições de neblina.'),
+('ADM021', 53, '2026-01-02 14:30:00', 'Coordenação de troca de pneu em via não pavimentada.'),
+('ADM026', 54, '2026-01-02 10:30:00', 'Registro de dano por temperatura.'),
+('ADM031', 55, '2026-01-03 16:30:00', 'Confirmação de extravio entre setores.'),
+('ADM036', 56, '2026-01-02 12:30:00', 'Gerenciamento de crise por perda de contato.'),
+('ADM041', 57, '2026-01-05 13:30:00', 'Registro de tempo de espera excessivo.'),
+('ADM046', 58, '2026-01-04 18:30:00', 'Coordenação de reparo de ignição.'),
+('ADM051', 59, '2026-01-06 14:30:00', 'Registro de dano superficial.'),
+('ADM056', 60, '2026-01-07 10:30:00', 'Abertura de sinistro por roubo de carga.');
